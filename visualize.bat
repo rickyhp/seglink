@@ -1,0 +1,1 @@
+python visualize_detection_result.py --image="F:\CODE\dengdan\seglink\alcohol_images" --det="F:\CODE\dengdan\seglink\seglink-512\model.ckpt-217867\test\icdar2015_test\model.ckpt-217867\seg_link_conf_th_0.800000_0.500000\txt" --output="F:\CODE\dengdan\seglink\visualize_detection_result\alcohol_images"
