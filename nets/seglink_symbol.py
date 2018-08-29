@@ -1,11 +1,12 @@
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
-from . import net_factory
+import net_factory
 import config
 
 
 class SegLinkNet(object):
-    def __init__(self, inputs, weight_decay = None, basenet_type = 'vgg', data_format = 'NHWC',  
+    def __init__(self, inputs, weight_decay = None, basenet_type = 'inception_v3', data_format = 'NHWC',  
+    #def __init__(self, inputs, weight_decay = None, basenet_type = 'vgg', data_format = 'NHWC',  
                                 weights_initializer = None, biases_initializer = None):
         self.inputs = inputs;
         self.weight_decay = weight_decay
@@ -42,9 +43,15 @@ class SegLinkNet(object):
                                 data_format = self.data_format):
                 with tf.variable_scope(self.basenet_type):
                     basenet, end_points = net_factory.get_basenet(self.basenet_type, self.inputs);
+                    print('========== get_basenet =========')
+                    print('basenet: ',basenet)
+                    print('end_points: ',end_points)
                     
                 with tf.variable_scope('extra_layers'):
                     self.net, self.end_points = self._add_extra_layers(basenet, end_points);
+                    print('========== _add_extra_layers =========')
+                    print('net: ',self.net)
+                    print('end_points: ',self.end_points)
                 
                 with tf.variable_scope('seglink_layers'):
                     self._add_seglink_layers();
