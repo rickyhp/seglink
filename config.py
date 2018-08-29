@@ -34,7 +34,13 @@ global link_conf_threshold
 
 anchor_offset = 0.5    
 anchor_scale_gamma = 1.5
-feat_layers = ['conv4_3','fc7', 'conv6_2', 'conv7_2', 'conv8_2', 'conv9_2']
+
+# vgg16
+#feat_layers = ['conv4_3','fc7', 'conv6_2', 'conv7_2', 'conv8_2', 'conv9_2']
+
+# inception v3
+feat_layers = ['conv4_3','Mixed_7b', 'conv6_2', 'conv7_2', 'conv8_2', 'conv9_2']
+
 # feat_norms = [20] + [-1] * len(feat_layers)
 max_height_ratio = 1.5
 # prior_scaling = [0.1, 0.2, 0.1, 0.2, 20.0]
@@ -88,9 +94,9 @@ def init_config(image_shape, batch_size = 1,
                 train_with_ignored = False,
                 seg_loc_loss_weight = 1.0,
                 link_cls_loss_weight = 1.0,
-                seg_conf_threshold = 0.5,
-                link_conf_threshold = 0.5):
-
+                seg_conf_threshold = 0.7,
+                link_conf_threshold = 0.7):
+    print('start init_config')
     _set_det_th(seg_conf_threshold, link_conf_threshold)
     _set_loss_weight(seg_loc_loss_weight, link_cls_loss_weight)
     _set_train_with_ignored(train_with_ignored)
@@ -126,7 +132,7 @@ def init_config(image_shape, batch_size = 1,
     num_clones = len(gpus)
     
     global clone_scopes
-    clone_scopes = ['clone_%d'%(idx) for idx in range(num_clones)]
+    clone_scopes = ['clone_%d'%(idx) for idx in xrange(num_clones)]
     
     _set_batch_size(batch_size)
     
@@ -134,7 +140,7 @@ def init_config(image_shape, batch_size = 1,
     batch_size_per_gpu = batch_size / num_clones
     if batch_size_per_gpu < 1:
         raise ValueError('Invalid batch_size [=%d], resulting in 0 images per gpu.'%(batch_size))
-    
+    print('end init_config')
     
 def print_config(flags, dataset, save_dir = None, print_to_file = True):
     def do_print(stream=None):

@@ -106,7 +106,7 @@ def config_initialization():
     return dataset
 
 def create_dataset_batch_queue(dataset):
-    with tf.device('/cpu:0'):
+    with tf.device('/gpu:0'):
         with tf.name_scope(FLAGS.dataset_name + '_data_provider'):
             provider = slim.dataset_data_provider.DatasetDataProvider(
                 dataset,
@@ -173,7 +173,7 @@ def sum_gradients(clone_grads):
 
 
 def create_clones(batch_queue):        
-    with tf.device('/cpu:0'):
+    with tf.device('/gpu:0'):
         global_step = slim.create_global_step()
         learning_rate = tf.constant(FLAGS.learning_rate, name='learning_rate')
         tf.summary.scalar('learning_rate', learning_rate)
@@ -245,7 +245,7 @@ def train(train_op):
     elif FLAGS.gpu_memory_fraction > 0:
         sess_config.gpu_options.per_process_gpu_memory_fraction = FLAGS.gpu_memory_fraction;
     
-    init_fn = util.tf.get_init_fn(checkpoint_path = FLAGS.checkpoint_path, train_dir = FLAGS.train_dir, 
+    init_fn = util.tf.get_init_fn(checkpoint_path = None, train_dir = FLAGS.train_dir, 
                           ignore_missing_vars = FLAGS.ignore_missing_vars, checkpoint_exclude_scopes = FLAGS.checkpoint_exclude_scopes)
     saver = tf.train.Saver(max_to_keep = 500, write_version = 2)
     slim.learning.train(

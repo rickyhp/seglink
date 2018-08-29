@@ -77,6 +77,7 @@ tf.app.flags.DEFINE_integer('eval_image_height', 768, 'Train image size')
 FLAGS = tf.app.flags.FLAGS
 
 def config_initialization():
+    print('in config_initialization')
     # image shape and feature layers shape inference
     image_shape = (FLAGS.eval_image_height, FLAGS.eval_image_width)
     
@@ -92,12 +93,13 @@ def config_initialization():
                        seg_loc_loss_weight = FLAGS.seg_loc_loss_weight, 
                        link_cls_loss_weight = FLAGS.link_cls_loss_weight, 
                        )
-        
+    print('init_config done')
     
     util.proc.set_proc_name('eval_' + FLAGS.model_name + '_' + FLAGS.dataset_name )
+    
     dataset = dataset_factory.get_dataset(FLAGS.dataset_name, FLAGS.dataset_split_name, FLAGS.dataset_dir)
     config.print_config(FLAGS, dataset, print_to_file = False)
-    
+    print('end config_initialization')
     return dataset
 
 def read_dataset(dataset):
@@ -138,17 +140,22 @@ def read_dataset(dataset):
     return image, seg_label, seg_loc, link_gt, filename, shape, gignored, gxs, gys
 
 def eval(dataset):
+    print('In eval method')
     dict_metrics = {} 
     checkpoint_dir = util.io.get_dir(FLAGS.checkpoint_path)
+    print('Eval using checkpoint dir : ',checkpoint_dir)
     logdir = util.io.join_path(checkpoint_dir, 
                                'eval',  
                                "%s_%s"%(FLAGS.dataset_name, FLAGS.dataset_split_name))
-    
+    print('Getting/creating global step...')
     global_step = slim.get_or_create_global_step()
+    print('Global step created')
     with tf.name_scope('evaluation_%dx%d'%(FLAGS.eval_image_height, FLAGS.eval_image_width)):
         with tf.variable_scope(tf.get_variable_scope(), reuse = True):# the variables has been created in config.init_config
             # get input tensor
             image, seg_label, seg_loc, link_gt, filename, shape, gignored, gxs, gys = read_dataset(dataset)
+            print('Dataset loaded to memory')
+            
             # expand dim if needed
             b_image =  tf.expand_dims(image, axis = 0);
             b_seg_label = tf.expand_dims(seg_label, axis = 0)
@@ -157,12 +164,13 @@ def eval(dataset):
             b_shape = tf.expand_dims(shape, axis = 0)
             
             # build seglink loss
+            print('building net.build_loss...')
             net = seglink_symbol.SegLinkNet(inputs = b_image, data_format = config.data_format)
             net.build_loss(seg_labels = b_seg_label, 
                            seg_offsets = b_seg_loc, 
                            link_labels = b_link_gt,
                            do_summary = False) # the summary will be added in the following lines
-            
+            print('net.build_loss completed')
             # gather seglink losses
             losses = tf.get_collection(tf.GraphKeys.LOSSES)
             assert len(losses) ==  3  # 3 is the number of seglink losses: seg_cls, seg_loc, link_cls
@@ -188,6 +196,7 @@ def eval(dataset):
                 link_ths = [FLAGS.link_conf_threshold]
             
             eval_result_path = util.io.join_path(logdir, 'eval_on_%s_%s.log'%(FLAGS.dataset_name, FLAGS.dataset_split_name))
+            print('decoding seglink to bbox output...')
             for seg_th in seg_ths:
                 for link_th in link_ths:
                     config._set_det_th(seg_th, link_th)
@@ -219,7 +228,7 @@ def eval(dataset):
                         tf.summary.scalar('Precision', precision)
                         tf.summary.scalar('Recall', recall)
                         tf.summary.scalar('F-mean', fmean)
-            
+            print('end decoding seglink to bbox output')
     names_to_values, names_to_updates = slim.metrics.aggregate_metric_map(dict_metrics)
 
     
@@ -238,26 +247,36 @@ def eval(dataset):
         variables_to_restore[global_step.op.name] = global_step
     else:
         variables_to_restore = slim.get_variables_to_restore()
-
-    if util.io.is_dir(FLAGS.checkpoint_path):
-        slim.evaluation.evaluation_loop(
+    print('running evaluation...')
+#    if util.io.is_dir(FLAGS.checkpoint_path):
+#        print('checkpoint_path is directory, evaluate_loop')
+#        slim.evaluation.evaluation_loop(
+#            master = '',
+#            eval_op=list(names_to_updates.values()),
+#            num_evals=dataset.num_samples,
+#            variables_to_restore=variables_to_restore,
+#            checkpoint_dir = checkpoint_dir,
+#            logdir = logdir,
+#            session_config=sess_config)
+#    else:
+#        print('checkpoint_path is NOT directory, evaluate_once')
+#        slim.evaluation.evaluate_once(
+#            master = '',
+#            eval_op=list(names_to_updates.values()),
+#            variables_to_restore=variables_to_restore,
+#            num_evals=2,#dataset.num_samples,
+#            checkpoint_path = FLAGS.checkpoint_path,
+#            logdir = logdir,
+#            session_config=sess_config)
+    slim.evaluation.evaluate_once(
             master = '',
             eval_op=list(names_to_updates.values()),
+            variables_to_restore=variables_to_restore,
             num_evals=dataset.num_samples,
-            variables_to_restore=variables_to_restore,
-            checkpoint_dir = checkpoint_dir,
-            logdir = logdir,
-            session_config=sess_config)
-    else:
-        slim.evaluation.evaluate_once(
-            master = '',
-            eval_op=list(names_to_updates.values()),
-            variables_to_restore=variables_to_restore,
-            num_evals=2,#dataset.num_samples,
             checkpoint_path = FLAGS.checkpoint_path,
             logdir = logdir,
             session_config=sess_config)
-
+    print('end evaluation')
                 
         
 def main(_):

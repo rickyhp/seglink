@@ -62,7 +62,7 @@ def visualize(image_root, det_root, output_root, gt_root = None):
     image_names = util.io.ls(image_root, '.jpg')
     for image_idx, image_name in enumerate(image_names):
         
-        print('%d / %d: %s'%(image_idx + 1, len(image_names), image_name))
+        print '%d / %d: %s'%(image_idx + 1, len(image_names), image_name)
         image_data = read_image_file(image_name) # in BGR
         image_name = image_name.split('.')[0]
         

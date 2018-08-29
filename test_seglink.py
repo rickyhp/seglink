@@ -2,11 +2,17 @@
 """Read test images, and store the detection result as txt files and zip file. 
     The zip file follows the rule of ICDAR2015 Challenge4 Task1
 """
+import numpy as np
+import math
 import tensorflow as tf # test
+from tensorflow.python.ops import control_flow_ops
+from tensorflow.contrib.training.python.training import evaluation
+from datasets import dataset_factory
 from preprocessing import ssd_vgg_preprocessing
+from tf_extended import seglink, metrics
 import util
-from nets import seglink_symbol
-from tf_extended import seglink
+import cv2
+from nets import seglink_symbol, anchor_layer
 
 slim = tf.contrib.slim
 import config
@@ -60,7 +66,7 @@ def config_initialization():
     
 def write_result(image_name, image_data, bboxes, path):
   filename = util.io.join_path(path, 'res_%s.txt'%(image_name))
-  print(filename)
+  print filename
   lines = []
   for bbox in bboxes:
         line = "%d, %d, %d, %d, %d, %d, %d, %d\r\n"%(int(v) for v in bbox)
@@ -89,35 +95,22 @@ def eval():
 
     image_names = util.io.ls(FLAGS.dataset_dir)
     
-    sess_config = tf.ConfigProto(log_device_placement = False, allow_soft_placement = True)
+    sess_config = tf.ConfigProto(log_device_placement = True, allow_soft_placement = True)
     if FLAGS.gpu_memory_fraction < 0:
         sess_config.gpu_options.allow_growth = True
     elif FLAGS.gpu_memory_fraction > 0:
         sess_config.gpu_options.per_process_gpu_memory_fraction = FLAGS.gpu_memory_fraction;
     
     checkpoint_dir = util.io.get_dir(FLAGS.checkpoint_path)
-    
-    print("checkpoint_dir: ",checkpoint_dir)
-     
     logdir = util.io.join_path(FLAGS.checkpoint_path, 'test', FLAGS.dataset_name + '_' +FLAGS.dataset_split_name)
     
     saver = tf.train.Saver()
-    
-    print('FLAGS.checkpoint_path: ', FLAGS.checkpoint_path)
-    
-    print('util.tf.is_gpu_available: ', util.tf.is_gpu_available(cuda_only=True))
-    
     if util.io.is_dir(FLAGS.checkpoint_path):
         checkpoint = util.tf.get_latest_ckpt(FLAGS.checkpoint_path)
     else:
         checkpoint = FLAGS.checkpoint_path
-    
-    print('checkpoint: ', checkpoint)
-    
-    from tensorflow.python.tools import inspect_checkpoint as chkp
-    chkp.print_tensors_in_checkpoint_file(checkpoint, tensor_name='', all_tensors=True, all_tensor_names=False)
-       
-    tf.logging.info('testing',checkpoint)
+        
+    tf.logging.info('testing', checkpoint)
 
     with tf.Session(config = sess_config) as sess:
         saver.restore(sess, checkpoint)
@@ -137,20 +130,20 @@ def eval():
                 line = "%d, %d, %d, %d, %d, %d, %d, %d\n"%tuple(values)
                 lines.append(line)
           util.io.write_lines(filename, lines)
-          print('result has been written to:', filename)
+          print 'result has been written to:', filename
           
         for iter, image_name in enumerate(image_names):
             image_data = util.img.imread(util.io.join_path(FLAGS.dataset_dir, image_name), rgb = True)
             image_name = image_name.split('.')[0]
             image_bboxes = sess.run([bboxes_pred], feed_dict = {image:image_data, image_shape:image_data.shape})
-            print('%d/%d: %s'%(iter + 1, len(image_names), image_name))
+            print '%d/%d: %s'%(iter + 1, len(image_names), image_name)
             write_result_as_txt(image_name, image_bboxes[0], txt_path)
                 
         # create zip file for icdar2015
         cmd = 'cd %s;zip -j %s %s/*'%(dump_path, zip_path, txt_path);
-        print(cmd)
-        print(util.cmd.cmd(cmd));
-        print("zip file created: ", util.io.join_path(dump_path, zip_path))
+        print cmd
+        print util.cmd.cmd(cmd);
+        print "zip file created: ", util.io.join_path(dump_path, zip_path)
 
 
 def main(_):
