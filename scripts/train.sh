@@ -5,8 +5,10 @@ export CUDA_VISIBLE_DEVICES=$1
 IMG_PER_GPU=$2
 DATASET=$3
 
-CHKPT_PATH=${HOME}/models/seglink/seglink_synthtext
-TRAIN_DIR=${HOME}/models/seglink/seglink_icdar2015_384
+export PYTHONPATH=/home/rp/code/pylib/src
+
+CHKPT_PATH=${HOME}/code/seglink/models/seglink_icdar2015_512
+TRAIN_DIR=${HOME}/code/seglink/models/seglink_icdar2015_512
 #TRAIN_DIR=${HOME}/temp/no-use/seglink/seglink_icdar2015_384
 #CHKPT_PATH=${HOME}/models/ssd-pretrain/seglink
 
@@ -38,15 +40,15 @@ else
     exit
 fi
 
-DATASET_DIR=$HOME/dataset/SSD-tf/${DATA_PATH}
+DATASET_DIR=$HOME/code/icdar2015
 
 python train_seglink.py \
 			--train_dir=${TRAIN_DIR} \
 			--num_gpus=${NUM_GPUS} \
 			--learning_rate=0.0001 \
 			--gpu_memory_fraction=-1 \
-			--train_image_width=384 \
-			--train_image_height=384 \
+			--train_image_width=512 \
+			--train_image_height=512 \
 			--batch_size=${BATCH_SIZE}\
             --dataset_dir=${DATASET_DIR} \
             --dataset_name=${DATASET} \

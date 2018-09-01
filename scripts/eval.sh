@@ -27,7 +27,7 @@ else
     exit
 fi
 
-DATASET_DIR=$HOME/dataset/SSD-tf/${DATA_PATH}
+DATASET_DIR=$HOME/code/icdar2015
 
 python eval_seglink.py \
 			--checkpoint_path=${CHECKPOINT_PATH} \
@@ -36,7 +36,7 @@ python eval_seglink.py \
             --dataset_split_name=$SPLIT \
 			--eval_image_width=${WIDTH} \
 			--eval_image_height=${HEIGHT} \
-			--gpu_memory_fraction=0.4 \
+			--gpu_memory_fraction=-1 \
 			--do_grid_search=$7 \
 			--using_moving_average=0
 

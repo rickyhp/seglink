@@ -8,7 +8,7 @@ export CUDA_VISIBLE_DEVICES=$1
 CHECKPOINT_PATH=$2
 DATASET_DIR=$3
 
-
+export PYTHONPATH=/home/rp/code/pylib/src
 
 python test_seglink.py \
 			--checkpoint_path=${CHECKPOINT_PATH} \
